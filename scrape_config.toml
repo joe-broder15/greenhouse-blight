@@ -1,0 +1,17 @@
+[greenhouse]
+dork = "site:job-boards.greenhouse.io (inurl:\"/jobs/\" OR inurl:\"job_board\") (\"Engineer\" OR \"Security\" OR \"Software\")"
+url_patterns = [
+    "job-boards.greenhouse.io/"
+]
+pattern = "job-boards\\.greenhouse\\.io/([^/\\s]+)"
+portal_url_template = "https://job-boards.greenhouse.io/embed/job_board?for={company}"
+output_folder = "gh_output"
+
+[lever]
+dork = "site:jobs.lever.co (\"Engineer\" OR \"Security\" OR \"Software\")"
+url_patterns = [
+    "jobs.lever.co/"
+]
+pattern = "jobs\\.lever\\.co/([^/\\s]+)"
+portal_url_template = "https://jobs.lever.co/{company}/" 
+output_folder = "lever_output"
