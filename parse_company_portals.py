@@ -127,8 +127,13 @@ def parse_site_links(site_name: str, software_config: dict) -> bool:
 
 
 def parse_args():
+    """
+    Parse command-line arguments for the script.
+    Returns:
+        argparse.Namespace: Parsed arguments including config file path, software type, and verbose flag.
+    """
     parser = argparse.ArgumentParser(
-        description="Unified Company Parser: Extracts company names from job board URLs (Greenhouse, Lever) based on a config TOML file."
+        description="Unified Company Parser: Extracts company names from job board URLs (Greenhouse, Lever, Ashby) based on a config TOML file."
     )
     parser.add_argument("--config", "-c", default="scrape_config.toml",
                         help="Path to configuration TOML file (default: scrape_config.toml)")

@@ -1,14 +1,14 @@
 [greenhouse]
-dork = "site:job-boards.greenhouse.io (inurl:\"/jobs/\" OR inurl:\"job_board\") (\"Intern\" OR \"Engineer\" OR \"Software\" OR \"Security\" OR \"Cybersecurity\" OR \"Cyber\")"
+dork = "site:job-boards.greenhouse.io (inurl:\"/jobs/\" OR inurl:\"job_board\") "
 url_patterns = [
-    "job-boards.greenhouse.io/"
+    "job-boards.greenhouse.io/" 
 ]
 pattern = "job-boards\\.greenhouse\\.io/([^/\\s]+)"
 portal_url_template = "https://job-boards.greenhouse.io/embed/job_board?for={company}"
 output_folder = "gh_output"
 
 [lever]
-dork = "site:jobs.lever.co (\"Intern\" OR \"Engineer\" OR \"Software\" OR \"Security\" OR \"Cybersecurity\" OR \"Cyber\")"
+dork = "site:jobs.lever.co "
 url_patterns = [
     "jobs.lever.co/"
 ]
@@ -17,10 +17,13 @@ portal_url_template = "https://jobs.lever.co/{company}/"
 output_folder = "lever_output"
 
 [ashby]
-dork = "site:jobs.ashbyhq.com (\"Intern\" OR \"Engineer\" OR \"Software\" OR \"Security\" OR \"Cybersecurity\" OR \"Cyber\")"
+dork = "site:jobs.ashbyhq.com "
 url_patterns = [
     "jobs.ashbyhq.com/"
 ]
 pattern = "jobs\\.ashbyhq\\.com/([^/\\s]+)"
 portal_url_template = "https://jobs.ashbyhq.com/{company}/" 
 output_folder = "ashby_output"
+
+[common]
+common_dork = "\"Intern\" (\"Security\" OR \"Cybersecurity\" OR \"Cyber\" OR \"Forensics\" OR \"Difr\" OR \"Incident Response\")"

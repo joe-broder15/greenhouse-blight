@@ -13,6 +13,13 @@ from selenium.common.exceptions import NoSuchElementException
 
 class JobBoardScraper:
     def __init__(self, software="greenhouse", config_file="scrape_config.toml", chromedriver_path=None):
+        """
+        Initialize the JobBoardScraper.
+        Args:
+            software (str): The recruiting software to use (e.g., 'greenhouse', 'lever', 'ashby').
+            config_file (str): Path to the TOML configuration file.
+            chromedriver_path (str or None): Path to the ChromeDriver executable. If None, uses default path.
+        """
         self.software = software.lower()
         self.found_links = set()
         self.driver = None
@@ -22,14 +29,21 @@ class JobBoardScraper:
             self.chromedriver_path = chromedriver_path
         self.is_exiting = False
         self.load_config(config_file)
+        # Ensure the links file exists
         if not os.path.exists(self.links_file):
             with open(self.links_file, "w") as f:
                 pass
         self.setup_driver()
+        # Register signal handler for graceful exit
         signal.signal(signal.SIGINT, self.handle_exit)
 
     def load_config(self, config_file):
-        """Load configuration from TOML file based on selected software"""
+        """
+        Load configuration from TOML file based on selected software.
+        Sets up search dork, URL patterns, and output folder.
+        Args:
+            config_file (str): Path to the TOML configuration file.
+        """
         try:
             with open(config_file, "rb") as f:
                 config = tomli.load(f)
@@ -40,8 +54,14 @@ class JobBoardScraper:
                 print(f"No configuration found for {self.software}, falling back to greenhouse")
                 self.software = "greenhouse"
                 software_config = config.get("greenhouse", {})
-                
-            self.search_dork = software_config.get("dork", "")
+            
+            # Combine the site-specific dork with the common dork if present
+            site_dork = software_config.get("dork", "")
+            common_dork = config.get("common", {}).get("common_dork", "")
+            if common_dork:
+                self.search_dork = f"{site_dork} {common_dork}".strip()
+            else:
+                self.search_dork = site_dork
             self.url_patterns = software_config.get("url_patterns", [])
             output_folder = software_config.get("output_folder", "").strip()
             os.makedirs(output_folder, exist_ok=True)
@@ -53,14 +73,22 @@ class JobBoardScraper:
             sys.exit(1)
 
     def setup_driver(self):
-        """Initialize Chrome browser with local chromedriver"""
+        """
+        Initialize Chrome browser with local chromedriver.
+        """
         options = Options()
         options.add_argument("--start-maximized")
         service = Service(executable_path=self.chromedriver_path)
         self.driver = webdriver.Chrome(service=service, options=options)
 
     def handle_exit(self, sig=None, frame=None):
-        """Handle exit (Ctrl+C or normal termination)"""
+        """
+        Handle exit (Ctrl+C or normal termination).
+        Saves links and closes the browser.
+        Args:
+            sig: Signal number (optional).
+            frame: Current stack frame (optional).
+        """
         if self.is_exiting:
             return
         self.is_exiting = True
@@ -71,8 +99,11 @@ class JobBoardScraper:
         sys.exit(0)
 
     def save_links(self):
-        """Save collected links to file"""
-        # Ensure wordlists directory exists
+        """
+        Save collected links to file.
+        Writes all found links to the links file.
+        """
+        # Ensure output directory exists
         os.makedirs(os.path.dirname(self.links_file), exist_ok=True)
         print(f"Saving {len(self.found_links)} links to {self.links_file}")
         with open(self.links_file, "w") as f:
@@ -80,18 +111,33 @@ class JobBoardScraper:
                 f.write(f"{link}\n")
 
     def is_captcha_present(self):
-        """Check for CAPTCHA based on the presence of the reCAPTCHA script."""
+        """
+        Check for CAPTCHA based on the presence of the reCAPTCHA script.
+        Returns:
+            bool: True if CAPTCHA is detected, False otherwise.
+        """
         page_source = self.driver.page_source
         return 'Our systems have detected unusual traffic from your computer network.' in page_source
 
     def handle_captcha(self):
-        """Pause execution until user solves CAPTCHA"""
+        """
+        Pause execution until user solves CAPTCHA.
+        Prompts the user to solve the CAPTCHA manually if detected.
+        """
         if self.is_captcha_present():
             print("CAPTCHA detected! Please solve it manually.")
             input("Press Enter after solving the CAPTCHA...")
 
     def wait_for_element(self, selector, by=By.CSS_SELECTOR, max_retries=5):
-        """Wait for an element with retry logic instead of timeout"""
+        """
+        Wait for an element with retry logic instead of timeout.
+        Args:
+            selector (str): The selector to search for.
+            by (selenium.webdriver.common.by.By): The method to locate elements.
+            max_retries (int): Maximum number of retries.
+        Returns:
+            bool: True if element is found, False otherwise.
+        """
         retries = 0
         while retries < max_retries:
             try:
@@ -104,13 +150,15 @@ class JobBoardScraper:
             except Exception as e:
                 print(f"Error while waiting: {e}")
                 retries += 1
-        
         print(f"Element {selector} not found after {max_retries} attempts")
         return False
 
     def collect_links_on_page(self):
-        """Find and collect relevant links on current page"""
-        # Wait without timeout
+        """
+        Find and collect relevant links on current page.
+        Adds links matching configured URL patterns to found_links.
+        """
+        # Iterate over all anchor elements on the page
         for element in self.driver.find_elements(By.CSS_SELECTOR, "a"):
             href = element.get_attribute("href")
             if href:
@@ -120,7 +168,11 @@ class JobBoardScraper:
                     print(f"Found link: {href}")
 
     def go_to_next_page(self):
-        """Navigate to next page of results if available"""
+        """
+        Navigate to next page of results if available.
+        Returns:
+            bool: True if next page is found and clicked, False otherwise.
+        """
         try:
             try:
                 next_link = self.driver.find_element(By.ID, "pnnext")
@@ -135,7 +187,11 @@ class JobBoardScraper:
             return False
         
     def wait_for_page_load(self):
-        """Wait for either search results or CAPTCHA to appear"""
+        """
+        Wait for either search results or CAPTCHA to appear.
+        Returns:
+            bool: True if page loads or CAPTCHA appears, False otherwise.
+        """
         max_retries = 10
         retries = 0
         
@@ -143,59 +199,55 @@ class JobBoardScraper:
             try:
                 # Check if search results container is present
                 results_container = self.driver.find_elements(By.ID, "rcnt")
-                
                 # Check if CAPTCHA message is present
                 page_source = self.driver.page_source
                 captcha_present = 'Our systems have detected unusual traffic from your computer network.' in page_source
-                
                 if results_container or captcha_present:
                     return True
-                    
                 print(f"Waiting for page to load... ({retries+1}/{max_retries})")
                 time.sleep(2)
                 retries += 1
-                
             except Exception as e:
                 print(f"Error while waiting for page load: {e}")
                 retries += 1
-        
         print(f"Page did not load properly after {max_retries} attempts")
         return False
 
     def run(self):
-        """Main execution flow"""
+        """
+        Main execution flow for scraping.
+        Navigates to Google, performs the search, collects links, and paginates through results.
+        """
         try:
             # Go to Google and search
             self.driver.get("https://www.google.com")
             search_box = self.driver.find_element(By.NAME, "q")
             search_box.send_keys(self.search_dork)
             search_box.send_keys(Keys.RETURN)
-            
             # Wait for page to load (either results or CAPTCHA)
             self.wait_for_page_load()
-            
             page_number = 1
             while True:
                 time.sleep(3)
                 self.handle_captcha()
                 print(f"Processing page {page_number}...")
-                
                 self.collect_links_on_page()
-                
                 if not self.go_to_next_page():
                     break
-
                 page_number += 1
-                
                 # Wait after navigating to next page as well
                 self.wait_for_page_load()
-                    
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
             self.handle_exit()
 
 def parse_args():
+    """
+    Parse command-line arguments for the script.
+    Returns:
+        argparse.Namespace: Parsed arguments including software type and config file path.
+    """
     parser = argparse.ArgumentParser(description="Scrape job board links from recruiting software sites")
     parser.add_argument(
         "--software", "-s", 
@@ -204,9 +256,15 @@ def parse_args():
         choices=["greenhouse", "lever", "ashby"],
         help="Recruiting software to scrape (default: greenhouse)"
     )
+    parser.add_argument(
+        "--config", "-c",
+        type=str,
+        default="scrape_config.toml",
+        help="Path to configuration TOML file (default: scrape_config.toml)"
+    )
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    scraper = JobBoardScraper(software=args.software)
+    scraper = JobBoardScraper(software=args.software, config_file=args.config)
     scraper.run()
