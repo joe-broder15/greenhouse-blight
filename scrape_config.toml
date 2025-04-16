@@ -1,5 +1,5 @@
 [greenhouse]
-dork = "site:job-boards.greenhouse.io (inurl:\"/jobs/\" OR inurl:\"job_board\") (\"Engineer\" OR \"Security\" OR \"Software\")"
+dork = "site:job-boards.greenhouse.io (inurl:\"/jobs/\" OR inurl:\"job_board\") (\"Intern\" OR \"Engineer\" OR \"Software\" OR \"Security\" OR \"Cybersecurity\" OR \"Cyber\")"
 url_patterns = [
     "job-boards.greenhouse.io/"
 ]
@@ -8,7 +8,7 @@ portal_url_template = "https://job-boards.greenhouse.io/embed/job_board?for={com
 output_folder = "gh_output"
 
 [lever]
-dork = "site:jobs.lever.co (\"Engineer\" OR \"Security\" OR \"Software\")"
+dork = "site:jobs.lever.co (\"Intern\" OR \"Engineer\" OR \"Software\" OR \"Security\" OR \"Cybersecurity\" OR \"Cyber\")"
 url_patterns = [
     "jobs.lever.co/"
 ]
@@ -17,7 +17,7 @@ portal_url_template = "https://jobs.lever.co/{company}/"
 output_folder = "lever_output"
 
 [ashby]
-dork = "site:jobs.ashbyhq.com (\"Engineer\" OR \"Security\" OR \"Software\")"
+dork = "site:jobs.ashbyhq.com (\"Intern\" OR \"Engineer\" OR \"Software\" OR \"Security\" OR \"Cybersecurity\" OR \"Cyber\")"
 url_patterns = [
     "jobs.ashbyhq.com/"
 ]
