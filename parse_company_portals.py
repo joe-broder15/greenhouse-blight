@@ -1,6 +1,7 @@
 import re
 import sys
 import os
+import urllib.parse
 import logging
 import argparse
 from pathlib import Path
@@ -67,7 +68,7 @@ def write_lines_to_file(file_path: str, lines: list) -> bool:
         return False
 
 
-def parse_site_links(site_name: str, site_config: dict) -> bool:
+def parse_site_links(site_name: str, software_config: dict) -> bool:
     """Processes the site's links file to extract company names and generate portal URLs.
 
     This function performs the following steps:
@@ -80,32 +81,22 @@ def parse_site_links(site_name: str, site_config: dict) -> bool:
     """
     logging.info(f"Processing {site_name} links")
 
-    # --- Retrieve and validate configuration parameters ---
-    # 'links_file' is mandatory; others have defaults.
-    links_file = site_config.get("links_file")
-    if not links_file:
-        logging.error(f"{site_name}: 'links_file' not specified in configuration.")
-        return False
-
-    companies_file = site_config.get("companies_file", f"{site_name}_companies.txt")
-    portals_file = site_config.get("portals_file", f"{site_name}_portals.txt")
-
-    # If an output folder is specified, adjust file paths accordingly
-    output_folder = site_config.get("output_folder", "").strip()
-    if output_folder:
-        os.makedirs(output_folder, exist_ok=True)
-        links_file = os.path.join(output_folder, os.path.basename(links_file))
-        companies_file = os.path.join(output_folder, os.path.basename(companies_file))
-        portals_file = os.path.join(output_folder, os.path.basename(portals_file))
+    # --- Retrieve and build output file paths using output_folder from configuration ---
+    output_folder = software_config.get("output_folder", "").strip()
+    if not output_folder:
+        raise ValueError(f"{site_name}: 'output_folder' not specified or empty in configuration")
+    os.makedirs(output_folder, exist_ok=True)
+    links_file = os.path.join(output_folder, "links.txt")
+    combined_file = os.path.join(output_folder, f"{site_name}_combined.txt")
 
     # Validate the regex pattern for extracting company names
-    pattern = site_config.get("pattern")
+    pattern = software_config.get("pattern")
     if not pattern:
         logging.error(f"{site_name}: 'pattern' not specified in configuration.")
         return False
 
     # Validate the portal URL template
-    portal_url_template = site_config.get("portal_url_template")
+    portal_url_template = software_config.get("portal_url_template")
     if not portal_url_template:
         logging.error(f"{site_name}: 'portal_url_template' not specified in configuration.")
         return False
@@ -121,19 +112,15 @@ def parse_site_links(site_name: str, site_config: dict) -> bool:
         logging.warning(f"{site_name}: No matching URLs found in '{links_file}'.")
         return True
 
-    # --- Write the companies file ---
-    companies_list = sorted(company_names)
-    if not write_lines_to_file(companies_file, companies_list):
-        logging.error(f"{site_name}: Error writing companies to '{companies_file}'.")
+    # --- Generate and write the combined company and portal file ---
+    if site_name.lower() == "ashby":
+        combined_list = [f"{urllib.parse.unquote(company)},{portal_url_template.format(company=company)}" for company in sorted(company_names)]
+    else:
+        combined_list = [f"{company},{portal_url_template.format(company=company)}" for company in sorted(company_names)]
+    if not write_lines_to_file(combined_file, combined_list):
+        logging.error(f"{site_name}: Error writing combined company and portal URLs to '{combined_file}'.")
         return False
-    logging.info(f"{site_name}: Written {len(company_names)} companies to '{companies_file}'")
-
-    # --- Generate and write the portals file ---
-    portals_list = [portal_url_template.format(company=company) for company in sorted(company_names)]
-    if not write_lines_to_file(portals_file, portals_list):
-        logging.error(f"{site_name}: Error writing portal URLs to '{portals_file}'.")
-        return False
-    logging.info(f"{site_name}: Written {len(company_names)} portal URLs in '{portals_file}'")
+    logging.info(f"{site_name}: Written {len(company_names)} combined company and portal URLs in '{combined_file}'")
 
     # --- Return success ---
     return True
@@ -146,7 +133,7 @@ def parse_args():
     parser.add_argument("--config", "-c", default="scrape_config.toml",
                         help="Path to configuration TOML file (default: scrape_config.toml)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
-    parser.add_argument("--software", "-s", type=str, default="greenhouse", choices=["greenhouse", "lever"], help="Recruiting software to process (default: greenhouse)")
+    parser.add_argument("--software", "-s", type=str, default="greenhouse", choices=["greenhouse", "lever", "ashby"], help="Recruiting software to process (default: greenhouse)")
     return parser.parse_args()
 
 
@@ -158,11 +145,11 @@ def main():
     config = load_config(args.config)
 
     site = args.software
-    site_config = config.get(site)
-    if not site_config:
+    software_config = config.get(site)
+    if not software_config:
         logging.warning(f"Configuration for site '{site}' not found in config file.")
         sys.exit(1)
-    result = parse_site_links(site, site_config)
+    result = parse_site_links(site, software_config)
     success = result
 
     if success:

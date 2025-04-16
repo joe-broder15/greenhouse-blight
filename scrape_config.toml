@@ -15,3 +15,12 @@ url_patterns = [
 pattern = "jobs\\.lever\\.co/([^/\\s]+)"
 portal_url_template = "https://jobs.lever.co/{company}/" 
 output_folder = "lever_output"
+
+[ashby]
+dork = "site:jobs.ashbyhq.com (\"Engineer\" OR \"Security\" OR \"Software\")"
+url_patterns = [
+    "jobs.ashbyhq.com/"
+]
+pattern = "jobs\\.ashbyhq\\.com/([^/\\s]+)"
+portal_url_template = "https://jobs.ashbyhq.com/{company}/" 
+output_folder = "ashby_output"

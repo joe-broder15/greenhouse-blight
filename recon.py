@@ -43,13 +43,11 @@ class JobBoardScraper:
                 
             self.search_dork = software_config.get("dork", "")
             self.url_patterns = software_config.get("url_patterns", [])
-            self.links_file = software_config.get("links_file", f"{self.software}_wordlists/links.txt")
             output_folder = software_config.get("output_folder", "").strip()
-            if output_folder:
-                os.makedirs(output_folder, exist_ok=True)
-                self.links_file = os.path.join(output_folder, os.path.basename(self.links_file))
-            
+            os.makedirs(output_folder, exist_ok=True)
+            self.links_file = os.path.join(output_folder, "links.txt")
             print(f"Loaded {self.software} configuration from {config_file}")
+
         except Exception as e:
             print(f"Error loading configuration: {e}")
             sys.exit(1)
@@ -203,7 +201,7 @@ def parse_args():
         "--software", "-s", 
         type=str, 
         default="greenhouse",
-        choices=["greenhouse", "lever"],
+        choices=["greenhouse", "lever", "ashby"],
         help="Recruiting software to scrape (default: greenhouse)"
     )
     return parser.parse_args()
