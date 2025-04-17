@@ -134,11 +134,8 @@ class JobBoardScraper:
         """
         Pause execution until user solves CAPTCHA.
         Automatically detects if CAPTCHA is solved by checking for the target text every second.
-        Prompts the user only if the CAPTCHA persists for a while.
         """
         captcha_text = 'Our systems have detected unusual traffic from your computer network.'
-        max_wait = 60  # seconds to wait before prompting user
-        waited = 0
         if self.is_captcha_present():
             print("CAPTCHA detected! Waiting for it to be solved...")
             while captcha_text in self.driver.page_source:
