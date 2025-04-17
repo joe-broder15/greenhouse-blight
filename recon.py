@@ -4,12 +4,14 @@ import sys
 import os
 import argparse
 import tomli
+import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.action_chains import ActionChains
 
 class JobBoardScraper:
     def __init__(self, software="greenhouse", config_file="scrape_config.toml", chromedriver_path=None):
@@ -74,10 +76,19 @@ class JobBoardScraper:
 
     def setup_driver(self):
         """
-        Initialize Chrome browser with local chromedriver.
+        Initialize Chrome browser with local chromedriver, using a random user-agent.
         """
         options = Options()
-        options.add_argument("--start-maximized")
+        # List of common user-agent strings
+        user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        ]
+        user_agent = random.choice(user_agents)
+        options.add_argument(f"--user-agent={user_agent}")
         service = Service(executable_path=self.chromedriver_path)
         self.driver = webdriver.Chrome(service=service, options=options)
 
@@ -122,11 +133,17 @@ class JobBoardScraper:
     def handle_captcha(self):
         """
         Pause execution until user solves CAPTCHA.
-        Prompts the user to solve the CAPTCHA manually if detected.
+        Automatically detects if CAPTCHA is solved by checking for the target text every second.
+        Prompts the user only if the CAPTCHA persists for a while.
         """
+        captcha_text = 'Our systems have detected unusual traffic from your computer network.'
+        max_wait = 60  # seconds to wait before prompting user
+        waited = 0
         if self.is_captcha_present():
-            print("CAPTCHA detected! Please solve it manually.")
-            input("Press Enter after solving the CAPTCHA...")
+            print("CAPTCHA detected! Waiting for it to be solved...")
+            while captcha_text in self.driver.page_source:
+                time.sleep(1)
+            print("CAPTCHA appears to be solved. Continuing...")
 
     def wait_for_element(self, selector, by=By.CSS_SELECTOR, max_retries=5):
         """
@@ -167,12 +184,56 @@ class JobBoardScraper:
                     self.found_links.add(href)
                     print(f"Found link: {href}")
 
+    def random_human_delay(self, min_sec=1, max_sec=3):
+        """
+        Sleep for a random duration between min_sec and max_sec seconds to simulate human behavior.
+        Args:
+            min_sec (int): Minimum seconds to sleep.
+            max_sec (int): Maximum seconds to sleep.
+        """
+        delay = random.uniform(min_sec, max_sec)
+        time.sleep(delay)
+
+    def simulate_human_interaction(self):
+        """
+        Simulate human-like scrolling and mouse movement on the page, in random order.
+        """
+        actions = []
+        # Add scrolling action
+        def scroll_action():
+            scroll_height = self.driver.execute_script("return document.body.scrollHeight")
+            for _ in range(random.randint(0, 2)):
+                scroll_to = random.randint(0, scroll_height)
+                self.driver.execute_script(f"window.scrollTo(0, {scroll_to});")
+                self.random_human_delay(0, 2)
+        actions.append(scroll_action)
+        # Add mouse movement action
+        def mouse_action():
+            try:
+                action = ActionChains(self.driver)
+                window_width = self.driver.execute_script("return window.innerWidth")
+                window_height = self.driver.execute_script("return window.innerHeight")
+                for _ in range(random.randint(0, 2)):
+                    x = random.randint(0, window_width - 1)
+                    y = random.randint(0, window_height - 1)
+                    action.move_by_offset(x, y).perform()
+                    self.random_human_delay(0, 2)
+                    action.move_by_offset(-x, -y)  # Move back to origin for next move
+            except Exception:
+                pass  # Ignore if mouse movement fails
+        actions.append(mouse_action)
+        # Shuffle and execute actions
+        random.shuffle(actions)
+        for act in actions:
+            act()
+
     def go_to_next_page(self):
         """
-        Navigate to next page of results if available.
+        Navigate to next page of results if available, with simulated human interaction before clicking.
         Returns:
             bool: True if next page is found and clicked, False otherwise.
         """
+        self.simulate_human_interaction()  # Simulate interaction before clicking next
         try:
             try:
                 next_link = self.driver.find_element(By.ID, "pnnext")
@@ -221,14 +282,17 @@ class JobBoardScraper:
         try:
             # Go to Google and search
             self.driver.get("https://www.google.com")
+            self.simulate_human_interaction()
             search_box = self.driver.find_element(By.NAME, "q")
             search_box.send_keys(self.search_dork)
+            self.simulate_human_interaction()
             search_box.send_keys(Keys.RETURN)
             # Wait for page to load (either results or CAPTCHA)
             self.wait_for_page_load()
+            self.simulate_human_interaction()
             page_number = 1
             while True:
-                time.sleep(3)
+                self.simulate_human_interaction()
                 self.handle_captcha()
                 print(f"Processing page {page_number}...")
                 self.collect_links_on_page()
@@ -237,6 +301,7 @@ class JobBoardScraper:
                 page_number += 1
                 # Wait after navigating to next page as well
                 self.wait_for_page_load()
+                self.simulate_human_interaction()
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
