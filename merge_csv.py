@@ -4,16 +4,7 @@ import glob
 import csv
 import sys
 import argparse
-
-# Try to use tomllib (Python 3.11+) or fallback to tomli for older versions.
-try:
-    import tomllib
-except ImportError:
-    try:
-        import tomli as tomllib
-    except ImportError:
-        sys.stderr.write("Please install toml support: pip install tomli\n")
-        sys.exit(1)
+import tomli
 
 
 def load_config(config_file):
@@ -21,7 +12,7 @@ def load_config(config_file):
     Load the TOML configuration file and return the parsed config dictionary.
     """
     with open(config_file, 'rb') as f:
-        return tomllib.load(f)
+        return tomli.load(f)
 
 
 def get_output_folders(config):

@@ -6,7 +6,7 @@ import argparse
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import tomli as tomllib
+import tomli
 import requests
 from bs4 import BeautifulSoup
 
@@ -171,7 +171,7 @@ def parse_args():
 
 def load_config(config_path):
     """
-    Load a TOML configuration file from the given path using tomllib/tomli fallback.
+    Load a TOML configuration file from the given path using tomli.
     Args:
         config_path (str): Path to the TOML configuration file.
     Returns:
@@ -179,7 +179,7 @@ def load_config(config_path):
     """
     try:
         with open(config_path, "rb") as f:
-            return tomllib.load(f)
+            return tomli.load(f)
     except Exception as e:
         logging.error(f"Error loading configuration file '{config_path}': {e}")
         sys.exit(1)

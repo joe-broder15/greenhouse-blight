@@ -5,7 +5,7 @@ import urllib.parse
 import logging
 import argparse
 from pathlib import Path
-import tomli as tomllib
+import tomli
 
 def setup_logging(verbose: bool = False) -> None:
     level = logging.DEBUG if verbose else logging.INFO
@@ -20,7 +20,7 @@ def load_config(config_path: str):
     """Load configuration from a TOML file."""
     try:
         with open(config_path, 'rb') as f:
-            config = tomllib.load(f)
+            config = tomli.load(f)
         return config
     except Exception as e:
         logging.error(f"Error loading configuration file '{config_path}': {e}")

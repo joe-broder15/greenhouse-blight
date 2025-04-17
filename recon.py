@@ -49,14 +49,12 @@ class JobBoardScraper:
         try:
             with open(config_file, "rb") as f:
                 config = tomli.load(f)
-                
             # Extract configuration values for the specified software
             software_config = config.get(self.software, {})
             if not software_config:
                 print(f"No configuration found for {self.software}, falling back to greenhouse")
                 self.software = "greenhouse"
                 software_config = config.get("greenhouse", {})
-            
             # Combine the site-specific dork with the common dork if present
             site_dork = software_config.get("dork", "")
             common_dork = config.get("common", {}).get("common_dork", "")
@@ -69,7 +67,6 @@ class JobBoardScraper:
             os.makedirs(output_folder, exist_ok=True)
             self.links_file = os.path.join(output_folder, "links.txt")
             print(f"Loaded {self.software} configuration from {config_file}")
-
         except Exception as e:
             print(f"Error loading configuration: {e}")
             sys.exit(1)
