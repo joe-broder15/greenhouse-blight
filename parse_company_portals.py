@@ -113,10 +113,7 @@ def parse_site_links(site_name: str, software_config: dict) -> bool:
         return True
 
     # --- Generate and write the combined company and portal file ---
-    if site_name.lower() == "ashby":
-        combined_list = [f"{urllib.parse.unquote(company)},{portal_url_template.format(company=company)}" for company in sorted(company_names)]
-    else:
-        combined_list = [f"{company},{portal_url_template.format(company=company)}" for company in sorted(company_names)]
+    combined_list = [f"{company},{portal_url_template.format(company=company)}" for company in sorted(company_names)]
     if not write_lines_to_file(combined_file, combined_list):
         logging.error(f"{site_name}: Error writing combined company and portal URLs to '{combined_file}'.")
         return False
@@ -138,7 +135,7 @@ def parse_args():
     parser.add_argument("--config", "-c", default="scrape_config.toml",
                         help="Path to configuration TOML file (default: scrape_config.toml)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
-    parser.add_argument("--software", "-s", type=str, default="greenhouse", choices=["greenhouse", "lever", "ashby"], help="Recruiting software to process (default: greenhouse)")
+    parser.add_argument("--software", "-s", type=str, default="greenhouse", choices=["greenhouse", "lever"], help="Recruiting software to process (default: greenhouse)")
     return parser.parse_args()
 
 

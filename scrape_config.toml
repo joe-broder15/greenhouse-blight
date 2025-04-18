@@ -16,14 +16,32 @@ pattern = "jobs\\.lever\\.co/([^/\\s]+)"
 portal_url_template = "https://jobs.lever.co/{company}/" 
 output_folder = "lever_output"
 
-[ashby]
-dork = "site:jobs.ashbyhq.com "
-url_patterns = [
-    "jobs.ashbyhq.com/"
-]
-pattern = "jobs\\.ashbyhq\\.com/([^/\\s]+)"
-portal_url_template = "https://jobs.ashbyhq.com/{company}/" 
-output_folder = "ashby_output"
 
 [common]
-common_dork = "\"Intern\" (\"Security\" OR \"Cybersecurity\" OR \"Cyber\" OR \"Forensics\" OR \"Difr\" OR \"Incident Response\")"
+common_dork = "(\"Security\" OR \"Cyber\" OR \"Engineering\" OR \"DevOps\" OR \"Software\" OR \"Cloud\" OR \"developer\" OR \"developer\")"
+any_job_filters = [
+    "Software",
+    "Engineer",
+    "Developer",
+    "DevOps",
+    "Cloud",
+    "Security",
+    "Cyber",
+    "Engineering"
+]
+
+none_job_filters = [
+    "intern",
+    "manager",
+    "director",
+    "vp",
+    "cto",
+    "cfo",
+    "coo",
+    "ciso",
+    "staff",
+    "senior",
+    "lead",
+    "principal",
+    "architect"
+]

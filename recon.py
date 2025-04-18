@@ -312,7 +312,7 @@ def parse_args():
         "--software", "-s", 
         type=str, 
         default="greenhouse",
-        choices=["greenhouse", "lever", "ashby"],
+        choices=["greenhouse", "lever"],
         help="Recruiting software to scrape (default: greenhouse)"
     )
     parser.add_argument(

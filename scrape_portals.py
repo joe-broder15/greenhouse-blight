@@ -139,6 +139,46 @@ def lever_scraper_func(company: str, portal: str) -> list:
     print(f"Finished scraping Lever for {company}, found {len(jobs)} jobs.")
     return jobs
 
+import re, json
+from typing import List, Dict
+
+def extract_job_postings(blob: str) -> List[Dict]:
+    """Return a list of dicts from the 'jobPostings' array inside an arbitrary text blob."""
+    array_start_re = re.compile(r'"jobPostings"\s*:\s*\[')
+    m = array_start_re.search(blob)
+    if not m:
+        raise ValueError("No 'jobPostings' key found")
+
+    pos = m.end() - 1          # index of the '[' we just matched
+    depth = 0                  # bracket nesting counter
+    in_str = False             # are we inside a quoted string?
+    esc    = False             # previous char was a backslash?
+    
+    for i in range(pos, len(blob)):
+        ch = blob[i]
+        
+        # ---------- handle strings so [] inside quotes are ignored ----------
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == '\\':
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        
+        if ch == '"':
+            in_str = True
+        elif ch == '[':
+            depth += 1
+        elif ch == ']':
+            depth -= 1
+            if depth == 0:            # found the matching closing bracket
+                array_text = blob[pos : i + 1]
+                return json.loads(array_text)   # ← list[dict]
+    
+    raise ValueError("Unbalanced brackets – array never closed")
+
 
 # Registry for scraper functions
 SCRAPER_REGISTRY = {
